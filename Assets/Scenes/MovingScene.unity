@@ -1762,7 +1762,7 @@ GameObject:
   - component: {fileID: 519420029}
   m_Layer: 0
   m_Name: Main Camera
-  m_TagString: MainCamera
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -7051,11 +7051,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 7078271487949604404, guid: e955d96a6007a2e4296c11d7ed245d94, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 8.94
+      value: 2.78
       objectReference: {fileID: 0}
     - target: {fileID: 7078271487949604404, guid: e955d96a6007a2e4296c11d7ed245d94, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.56
+      value: 2.05
       objectReference: {fileID: 0}
     - target: {fileID: 7078271487949604404, guid: e955d96a6007a2e4296c11d7ed245d94, type: 3}
       propertyPath: m_LocalPosition.z
@@ -7231,7 +7231,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   tocdo: 5
   movementFilter:
-    useTriggers: 1
+    useTriggers: 0
     useLayerMask: 1
     useDepth: 0
     useOutsideDepth: 0
@@ -7306,7 +7306,7 @@ CapsuleCollider2D:
   m_CallbackLayers:
     serializedVersion: 2
     m_Bits: 4294967295
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
   m_Offset: {x: -0.026307702, y: 0.44802493}

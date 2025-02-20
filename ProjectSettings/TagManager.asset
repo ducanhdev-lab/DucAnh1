@@ -8,6 +8,10 @@ TagManager:
   - House
   - Enemy
   - Panel
+  - Symbol Attack
+  - Symbol Health
+  - Symbol Mana
+  - Symbol DEF
   layers:
   - Default
   - TransparentFX

@@ -25,7 +25,8 @@ public class DiChuyen : MonoBehaviour
     void Update()
     {
         HuongDiChuyen.x = Input.GetAxis("Horizontal"); 
-        HuongDiChuyen.y = Input.GetAxis("Vertical");   
+        HuongDiChuyen.y = Input.GetAxis("Vertical");  
+        
 
         anim.SetFloat("isMove", HuongDiChuyen.sqrMagnitude);
 
