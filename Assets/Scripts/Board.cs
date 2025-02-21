@@ -1,27 +1,18 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class Board : MonoBehaviour
 {
     public int width;
-
     public int height;
-
-    //public GameObject tilePrefab;
     public GameObject[] dots;
-
-    //private BackgroundTile[,] allTiles;
     public GameObject[,] allDots;
-
+    private bool isRefilling = false;
 
     void Start()
     {
-        //allTiles = new BackgroundTile[width, height];
         allDots = new GameObject[width, height];
         SetUp();
-        //PrintAllTiles();
-        //PrintAllDot();
     }
 
     private void SetUp()
@@ -31,70 +22,54 @@ public class Board : MonoBehaviour
             for (int j = 0; j < height; j++)
             {
                 Vector2 tempPosition = new Vector2(i, j);
-                //GameObject backgroundTile = Instantiate(tilePrefab, tempPosition, Quaternion.identity) as GameObject;
-                //backgroundTile.transform.parent = this.transform;
-                //backgroundTile.name = "( " + i + ", " + j + " )";
-                int dotToUse = Random.Range(0, dots.Length);
-                int maxIterations = 0;
-
-                while (MatchesAt(i, j, dots[dotToUse]) && maxIterations < 100)
-                {
-                    dotToUse = Random.Range(0, dots.Length);
-                    maxIterations++;
-                    Debug.Log(maxIterations);
-                }
-
-                maxIterations = 0;
-
-                GameObject dot = Instantiate(dots[dotToUse], tempPosition, Quaternion.identity);
+                GameObject dot = CreateNewDot(i, j);
                 dot.transform.parent = this.transform;
-                dot.name = "( " + i + ", " + j + " )";
+                dot.name = $"({i}, {j})";
                 allDots[i, j] = dot;
             }
         }
     }
 
+    private GameObject CreateNewDot(int x, int y)
+    {
+        int dotToUse = Random.Range(0, dots.Length);
+        int maxIterations = 0;
+
+        while (MatchesAt(x, y, dots[dotToUse]) && maxIterations < 100)
+        {
+            dotToUse = Random.Range(0, dots.Length);
+            maxIterations++;
+        }
+
+        GameObject dot = Instantiate(dots[dotToUse], new Vector2(x, y), Quaternion.identity);
+        return dot;
+    }
+
     private bool MatchesAt(int col, int row, GameObject piece)
     {
-        if (col > 1 && row > 1)
+        if (col > 1)
         {
-            if (allDots[col - 1, row].tag == piece.tag && allDots[col - 2, row].tag == piece.tag)
-            {
-                return true;
-            }
-
-            if (allDots[col, row - 1].tag == piece.tag && allDots[col, row - 2].tag == piece.tag)
+            if (allDots[col - 1, row]?.tag == piece.tag && allDots[col - 2, row]?.tag == piece.tag)
             {
                 return true;
             }
         }
-        else if (col <= 1 || row <= 1)
+        if (row > 1)
         {
-            if (row > 1)
+            if (allDots[col, row - 1]?.tag == piece.tag && allDots[col, row - 2]?.tag == piece.tag)
             {
-                if (allDots[col, row - 1].tag == piece.tag && allDots[col, row - 2].tag == piece.tag)
-                {
-                    return true;
-                }
-            }
-
-            if (col > 1)
-            {
-                if (allDots[col - 1, row].tag == piece.tag && allDots[col - 2, row].tag == piece.tag)
-                {
-                    return true;
-                }
+                return true;
             }
         }
-
         return false;
     }
 
-    private void DestroyMatchesAt(int col, int row)
+    public void DestroyMatchesAt(int col, int row)
     {
-        if (allDots[col, row].GetComponent<Dot>().isMatched)
+        if (allDots[col, row] != null && allDots[col, row].GetComponent<Dot>().isMatched)
         {
-            Destroy(allDots[col, row]);
+            // Instead of destroying, just deactivate the game object
+            allDots[col, row].SetActive(false);
             allDots[col, row] = null;
         }
     }
@@ -111,74 +86,150 @@ public class Board : MonoBehaviour
                 }
             }
         }
-
-        // Cập nhật vị trí của tất cả dot ngay sau khi destroy
-        UpdateBoardPositions();
-
+        StartCoroutine(DecreaseRowCo());
     }
 
-    private void UpdateBoardPositions()
+    private IEnumerator DecreaseRowCo()
     {
-        // Duyệt từng cột của board
+        yield return new WaitForSeconds(.4f);
+
+        // First, move all pieces down
         for (int i = 0; i < width; i++)
         {
-            // Đếm số ô trống ở cột hiện tại
-            int emptyCount = 0;
+            for (int j = 0; j < height - 1; j++)
+            {
+                if (allDots[i, j] == null)
+                {
+                    // Look for the next non-null piece above
+                    for (int k = j + 1; k < height; k++)
+                    {
+                        if (allDots[i, k] != null)
+                        {
+                            // Move the piece down
+                            allDots[i, j] = allDots[i, k];
+                            allDots[i, k] = null;
+
+                            // Update the piece's position
+                            allDots[i, j].GetComponent<Dot>().row = j;
+                            allDots[i, j].GetComponent<Dot>().col = i;
+
+                            // Start movement animation
+                            Vector2 tempPosition = new Vector2(i, j);
+                            StartCoroutine(Movepiece(allDots[i, j], tempPosition));
+
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        // After moving pieces down, fill empty spaces at the top
+        for (int i = 0; i < width; i++)
+        {
             for (int j = 0; j < height; j++)
             {
                 if (allDots[i, j] == null)
                 {
-                    emptyCount++;
+                    // Find any deactivated pieces we can reuse
+                    GameObject inactivePiece = FindInactivePiece();
+                    if (inactivePiece != null)
+                    {
+                        // Reuse the piece
+                        inactivePiece.SetActive(true);
+                        inactivePiece.transform.position = new Vector2(i, height);
+                        allDots[i, j] = inactivePiece;
+
+                        // Set up the piece
+                        Dot dot = inactivePiece.GetComponent<Dot>();
+                        dot.row = j;
+                        dot.col = i;
+
+                        // Move it to its position
+                        Vector2 tempPosition = new Vector2(i, j);
+                        StartCoroutine(Movepiece(inactivePiece, tempPosition));
+                    }
                 }
-                else if (emptyCount > 0)
+            }
+        }
+
+        yield return new WaitForSeconds(.4f);
+        StartCoroutine(FillBoardCo());
+    }
+
+    private GameObject FindInactivePiece()
+    {
+        // Look through all child objects for an inactive piece
+        foreach (Transform child in transform)
+        {
+            if (!child.gameObject.activeSelf)
+            {
+                return child.gameObject;
+            }
+        }
+        return null;
+    }
+
+    private IEnumerator Movepiece(GameObject piece, Vector2 endPosition)
+    {
+        float elapsedTime = 0f;
+        float moveTime = 0.2f;
+        Vector2 startPosition = piece.transform.position;
+
+        while (elapsedTime < moveTime)
+        {
+            elapsedTime += Time.deltaTime;
+            float t = elapsedTime / moveTime;
+            piece.transform.position = Vector2.Lerp(startPosition, endPosition, t);
+            yield return null;
+        }
+
+        piece.transform.position = endPosition;
+    }
+
+
+    private IEnumerator FillBoardCo()
+    {
+        yield return new WaitForSeconds(.5f);
+
+        while (MatchesOnBoard())
+        {
+            yield return new WaitForSeconds(.5f);
+            DestroyMatches();
+        }
+    }
+
+    private void RefillBoard()
+    {
+        for (int i = 0; i < width; i++)
+        {
+            for (int j = 0; j < height; j++)
+            {
+                if (allDots[i, j] == null)
                 {
-                    // Di chuyển dot xuống đúng số ô trống
-                    allDots[i, j].GetComponent<Dot>().row -= emptyCount;
-                    // Cập nhật lại vị trí trong mảng
-                    allDots[i, j - emptyCount] = allDots[i, j];
-                    allDots[i, j] = null;
+                    Vector2 tempPosition = new Vector2(i, j);
+                    GameObject piece = CreateNewDot(i, j);
+                    allDots[i, j] = piece;
                 }
             }
         }
     }
+
+    private bool MatchesOnBoard()
+    {
+        for (int i = 0; i < width; i++)
+        {
+            for (int j = 0; j < height; j++)
+            {
+                if (allDots[i, j] != null)
+                {
+                    if (allDots[i, j].GetComponent<Dot>().isMatched)
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
 }
-
-
-
-//void PrintAllTiles()
-    //{
-    //    for (int i = 0; i < width; i++)
-    //    {
-    //        for (int j = 0; j < height; j++)
-    //        {
-    //            if (allTiles[i, j] != null)
-    //            {
-    //                Debug.Log("Tile at (" + i + ", " + j + "): " + allTiles[i, j].name);
-    //            }
-    //            else
-    //            {
-    //                Debug.Log("Tile at (" + i + ", " + j + ") is NULL");
-    //            }
-    //        }
-    //    }
-    //}
-
-    //void PrintAllDot()
-    //{
-    //    for (int i = 0; i < width; i++)
-    //    {
-    //        for (int j = 0; j < height; j++)
-    //        {
-    //            if (allDots[i, j] != null)
-    //            {
-    //                Debug.Log("Dot at (" + i + ", " + j + "): " + allDots[i, j].name);
-    //            }
-    //            else
-    //            {
-    //                Debug.Log("Dot at (" + i + ", " + j + ") is NULL");
-    //            }
-    //        }
-    //    }
-    //}
-
-
