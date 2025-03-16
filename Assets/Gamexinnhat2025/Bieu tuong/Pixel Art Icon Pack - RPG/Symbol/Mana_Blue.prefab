@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 983951830784046929}
   - component: {fileID: 5312568810396005815}
   - component: {fileID: -6160781982597405249}
+  - component: {fileID: -5772787788679623612}
   m_Layer: 0
   m_Name: Mana_Blue
   m_TagString: Symbol Mana
@@ -135,4 +136,25 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   col: 0
   row: 0
+  previousCol: 0
+  previousRow: 0
   isMatched: 0
+  CombatCamera: {fileID: 0}
+  swipeResist: 1
+  destroyedCount: 0
+--- !u!114 &-5772787788679623612
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5387155527590306062}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1bef50980428e2545b65469b8422da78, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Attack: {fileID: 0}
+  Health: {fileID: 0}
+  Mana: {fileID: 0}
+  Defend: {fileID: 0}

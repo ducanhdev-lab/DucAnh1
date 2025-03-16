@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 2265535960234314200}
   - component: {fileID: 5155727466010177495}
   - component: {fileID: 5682279571032078269}
+  - component: {fileID: -5845984138735071775}
   m_Layer: 0
   m_Name: Button_Blue
   m_TagString: Symbol Attack
@@ -135,4 +136,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   col: 0
   row: 0
+  previousCol: 0
+  previousRow: 0
   isMatched: 0
+  CombatCamera: {fileID: 0}
+  swipeResist: 1
+--- !u!114 &-5845984138735071775
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7870962610495147336}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1bef50980428e2545b65469b8422da78, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

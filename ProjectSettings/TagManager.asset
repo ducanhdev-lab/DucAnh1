@@ -12,6 +12,7 @@ TagManager:
   - Symbol Health
   - Symbol Mana
   - Symbol DEF
+  - CombatCamera
   layers:
   - Default
   - TransparentFX
