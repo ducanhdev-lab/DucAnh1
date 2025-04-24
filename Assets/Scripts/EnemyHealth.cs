@@ -19,16 +19,37 @@ public class EnemyHealth : MonoBehaviour
     void Start()
     {
         currentHealth = maxHealth;
-        healthBar.SetMaxHealth(maxHealth);
-        UpdateHealthBar();
 
-        manaBar.SetMaxMana(maxMana);
-        manaBar.SetMana(currentMana);
+        if (healthBar != null)
+        {
+            healthBar.SetMaxHealth(maxHealth);
+            UpdateHealthBar();
+        }
+        else
+        {
+            Debug.LogWarning("EnemyHealth: healthBar is not assigned!");
+        }
 
-        defBar.SetMaxDEF(maxDEF);
-        defBar.SetDEF(currentDEF);
+        if (manaBar != null)
+        {
+            manaBar.SetMaxMana(maxMana);
+            manaBar.SetMana(currentMana);
+        }
+        else
+        {
+            Debug.LogWarning("EnemyHealth: manaBar is not assigned!");
+        }
 
-        // Đảm bảo Enemy có tên duy nhất
+        if (defBar != null)
+        {
+            defBar.SetMaxDEF(maxDEF);
+            defBar.SetDEF(currentDEF);
+        }
+        else
+        {
+            Debug.LogWarning("EnemyHealth: defBar is not assigned!");
+        }
+
         if (string.IsNullOrEmpty(gameObject.name) || gameObject.name == "Enemy(Clone)")
         {
             gameObject.name = "Enemy_" + Random.Range(1000, 9999);
@@ -36,22 +57,36 @@ public class EnemyHealth : MonoBehaviour
     }
 
     public void TakeDamage(int damage)
+{
+    if (isDead) return;
+
+    int remainingDamage = damage;
+    if (currentDEF > 0)
     {
-        if (isDead) return;
-
-        currentHealth -= damage;
-
-        if (currentHealth <= 0)
-        {
-            currentHealth = 0;
-            UpdateHealthBar();
-            Die();
-        }
-        else
-        {
-            UpdateHealthBar();
-        }
+        int defDamage = Mathf.Min(currentDEF, remainingDamage);
+        currentDEF -= defDamage;
+        remainingDamage -= defDamage;
+        UpdateDEFBar();
+        Debug.Log($"Enemy DEF reduced by {defDamage}. Remaining DEF: {currentDEF}");
     }
+
+    if (remainingDamage > 0)
+    {
+        currentHealth -= remainingDamage;
+        Debug.Log($"Enemy HP reduced by {remainingDamage}. Remaining HP: {currentHealth}");
+    }
+
+    if (currentHealth <= 0)
+    {
+        currentHealth = 0;
+        UpdateHealthBar();
+        Die();
+    }
+    else
+    {
+        UpdateHealthBar();
+    }
+}
 
     private void Die()
     {
@@ -77,7 +112,6 @@ public class EnemyHealth : MonoBehaviour
         if (isDead) return;
 
         currentHealth += amount;
-
         if (currentHealth > maxHealth)
         {
             currentHealth = maxHealth;
@@ -90,7 +124,6 @@ public class EnemyHealth : MonoBehaviour
         if (isDead) return;
 
         currentMana += amount;
-
         if (currentMana > maxMana)
         {
             currentMana = maxMana;
@@ -103,13 +136,13 @@ public class EnemyHealth : MonoBehaviour
         if (isDead) return;
 
         currentDEF += amount;
-
         if (currentDEF > maxDEF)
         {
             currentDEF = maxDEF;
         }
         UpdateDEFBar();
     }
+
     private void UpdateHealthBar()
     {
         if (healthBar != null)

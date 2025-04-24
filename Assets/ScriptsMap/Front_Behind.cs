@@ -1,105 +1,53 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class Front_Behind : MonoBehaviour
 {
     public Transform player;
-    [SerializeField] private SpriteRenderer[] treeRenderers;
-    [SerializeField] private SpriteRenderer[] houseRenders;
     public Transform[] enemies;
+    [SerializeField] private SpriteRenderer[] treeRenderers;
+    [SerializeField] private SpriteRenderer[] houseRenderers;
 
     void Start()
     {
-        treeRenderers = GetComponentsInChildren<SpriteRenderer>(); // Lấy các SpriteRenderer của cây
-        houseRenders = GetComponentsInChildren<SpriteRenderer>(); // Lấy các SpriteRenderer của nhà
+        // Lấy các SpriteRenderer của cây và nhà
+        treeRenderers = GetComponentsInChildren<SpriteRenderer>();
+        houseRenderers = GetComponentsInChildren<SpriteRenderer>();
+
+        // Gán sorting order cố định cho cây và nhà dựa trên y
+        SetStaticSortingOrder(treeRenderers);
+        SetStaticSortingOrder(houseRenderers);
     }
 
     void Update()
     {
-        UpdatePlayerAndEnemyOrder(); // Cập nhật order cho player và enemy
-    }
-
-    void UpdatePlayerAndEnemyOrder()
-    {
-        if (player == null || enemies == null) return;
-
-        // Cập nhật sortingOrder cho player
-        UpdateObjectOrder(player);
-
-        // Cập nhật sortingOrder cho từng enemy
+        UpdateDynamicSortingOrder(player); // Cập nhật cho Player
         foreach (Transform enemy in enemies)
         {
-            if (enemy != null && enemy.CompareTag("Enemy"))
+            UpdateDynamicSortingOrder(enemy); // Cập nhật cho Enemy
+        }
+    }
+
+    void SetStaticSortingOrder(SpriteRenderer[] renderers)
+    {
+        foreach (SpriteRenderer renderer in renderers)
+        {
+            if (renderer != null)
             {
-                UpdateObjectOrder(enemy);
+                // Sorting order dựa trên vị trí y (càng thấp càng ở trước)
+                renderer.sortingOrder = Mathf.RoundToInt(-renderer.transform.position.y * 100);
             }
         }
     }
 
-    void UpdateObjectOrder(Transform obj)
+    void UpdateDynamicSortingOrder(Transform obj)
     {
         if (obj == null) return;
 
-        SpriteRenderer objRenderer = obj.GetComponent<SpriteRenderer>();
-        if (objRenderer == null) return;
-
-        float objY = obj.position.y;
-        int sortingOrder = 0;
-
-        // Tìm đối tượng gần nhất (tree hoặc house)
-        Transform closestObject = FindClosestObject(obj);
-
-        if (closestObject != null)
+        SpriteRenderer renderer = obj.GetComponent<SpriteRenderer>();
+        if (renderer != null)
         {
-            // So sánh với đối tượng gần nhất
-            float closestObjectY = closestObject.position.y;
-            if (objY > closestObjectY)
-            {
-                sortingOrder = -1; // Đối tượng ở dưới vật gần nhất
-            }
-            else
-            {
-                sortingOrder = 1; // Đối tượng ở trên vật gần nhất
-            }
+            // Sorting order dựa trên y của Player/Enemy (càng thấp càng ở trước)
+            renderer.sortingOrder = Mathf.RoundToInt(-obj.position.y * 100);
         }
-
-        objRenderer.sortingOrder = sortingOrder;
-    }
-
-    Transform FindClosestObject(Transform obj)
-    {
-        Transform closestObject = null;
-        float closestDistance = Mathf.Infinity;
-
-        // Kiểm tra tất cả các đối tượng tree
-        foreach (SpriteRenderer treeRenderer in treeRenderers)
-        {
-            if (treeRenderer != null && treeRenderer.CompareTag("Tree"))
-            {
-                float distance = Vector3.Distance(obj.position, treeRenderer.transform.position);
-                if (distance < closestDistance)
-                {
-                    closestDistance = distance;
-                    closestObject = treeRenderer.transform;
-                }
-            }
-        }
-
-        // Kiểm tra tất cả các đối tượng house
-        foreach (SpriteRenderer houseRenderer in houseRenders)
-        {
-            if (houseRenderer != null && houseRenderer.CompareTag("House"))
-            {
-                float distance = Vector3.Distance(obj.position, houseRenderer.transform.position);
-                if (distance < closestDistance)
-                {
-                    closestDistance = distance;
-                    closestObject = houseRenderer.transform;
-                }
-            }
-        }
-
-        return closestObject;
     }
 }

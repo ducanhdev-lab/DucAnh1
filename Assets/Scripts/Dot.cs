@@ -17,48 +17,39 @@ public class Dot : MonoBehaviour
     private Vector2 finalTouchPosition;
     private float swipeAngle = 0;
     public float swipeResist = 1f;
-    private float moveSpeed = 8f;
-    private bool isMoving = false;
 
     void Start()
     {
         board = FindObjectOfType<Board>();
-        row = Mathf.RoundToInt(transform.position.y);
-        col = Mathf.RoundToInt(transform.position.x);
-        previousRow = row;
-        previousCol = col;
-
         CombatCamera = GameObject.FindWithTag("CombatCamera")?.GetComponent<Camera>();
-    }
-
-    void Update()
-    {
-        if (isMoving)
-        {
-            Vector2 targetPosition = new Vector2(col, row);
-            transform.position = Vector2.MoveTowards(transform.position, targetPosition, moveSpeed * Time.deltaTime);
-
-            if ((Vector2)transform.position == targetPosition)
-            {
-                isMoving = false;
-                board.allDots[col, row] = gameObject;
-            }
-        }
     }
 
     private void OnMouseDown()
     {
-        if (board != null)
+        if (board != null && !CombatManager.Instance.IsBotTurn && !board.IsRefilling)
         {
-            firstTouchPosition = CombatCamera.ScreenToWorldPoint(Input.mousePosition);
+            Vector2 worldPos = CombatCamera.ScreenToWorldPoint(Input.mousePosition);
+            firstTouchPosition = board.transform.InverseTransformPoint(worldPos);
+        }
+        else
+        {
+            if (CombatManager.Instance.IsBotTurn)
+            {
+                Debug.Log("Player input blocked: Bot's turn.");
+            }
+            else if (board.IsRefilling)
+            {
+                Debug.Log("Player input blocked: Board is refilling.");
+            }
         }
     }
 
     private void OnMouseUp()
     {
-        if (board != null)
+        if (board != null && !CombatManager.Instance.IsBotTurn)
         {
-            finalTouchPosition = CombatCamera.ScreenToWorldPoint(Input.mousePosition);
+            Vector2 worldPos = CombatCamera.ScreenToWorldPoint(Input.mousePosition);
+            finalTouchPosition = board.transform.InverseTransformPoint(worldPos);
             CalculateAngle();
         }
     }
@@ -112,22 +103,27 @@ public class Dot : MonoBehaviour
                 board.allDots[col, row] = otherDot;
                 board.allDots[targetCol, targetRow] = gameObject;
 
-                col += colDir;
-                row += rowDir;
+                col = targetCol; // Cập nhật trực tiếp thay vì += để tránh sai sót
+                row = targetRow;
 
                 Dot otherDotComponent = otherDot.GetComponent<Dot>();
                 if (otherDotComponent != null)
                 {
-                    otherDotComponent.col -= colDir;
-                    otherDotComponent.row -= rowDir;
+                    otherDotComponent.col = col - colDir;
+                    otherDotComponent.row = row - rowDir;
                 }
 
-                isMoving = true;
-                if (otherDotComponent != null)
-                {
-                    otherDotComponent.isMoving = true;
-                }
+                // Log để kiểm tra giá trị col và row
+                Debug.Log($"Swapping: Dot1 ({gameObject.name}) to (col: {col}, row: {row})");
+                Debug.Log($"Swapping: Dot2 ({otherDot.name}) to (col: {otherDotComponent.col}, row: {otherDotComponent.row})");
+
+                StartCoroutine(board.MovePiece(gameObject, new Vector2(col, row)));
+                StartCoroutine(board.MovePiece(otherDot, new Vector2(otherDotComponent.col, otherDotComponent.row)));
             }
+        }
+        else
+        {
+            Debug.LogWarning($"Invalid swap target: (col: {targetCol}, row: {targetRow})");
         }
     }
 
@@ -153,15 +149,19 @@ public class Dot : MonoBehaviour
                     board.allDots[col, row] = gameObject;
                     board.allDots[otherDotComponent.col, otherDotComponent.row] = otherDot;
 
-                    isMoving = true;
-                    otherDotComponent.isMoving = true;
+                    // Log để kiểm tra giá trị khi hoàn tác
+                    Debug.Log($"Reverting: Dot1 ({gameObject.name}) to (col: {col}, row: {row})");
+                    Debug.Log($"Reverting: Dot2 ({otherDot.name}) to (col: {otherDotComponent.col}, row: {otherDotComponent.row})");
+
+                    StartCoroutine(board.MovePiece(gameObject, new Vector2(col, row)));
+                    StartCoroutine(board.MovePiece(otherDot, new Vector2(otherDotComponent.col, otherDotComponent.row)));
                 }
                 else
                 {
                     board.DestroyMatches();
+                    CombatManager.Instance.EndPlayerTurn();
                 }
             }
-
             otherDot = null;
         }
     }

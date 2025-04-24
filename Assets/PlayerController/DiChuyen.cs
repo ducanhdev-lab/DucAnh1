@@ -1,10 +1,9 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 public class DiChuyen : MonoBehaviour
 {
-    public float tocdo = 2f; 
+    public float tocdo = 10f; 
     public ContactFilter2D movementFilter;
     public float collisionOffset = 0.05f;
 
@@ -13,7 +12,6 @@ public class DiChuyen : MonoBehaviour
     private List<RaycastHit2D> castCollisions = new List<RaycastHit2D>();
     private SpriteRenderer spr;
     private Animator anim;
-    
 
     void Start()
     {
@@ -24,9 +22,13 @@ public class DiChuyen : MonoBehaviour
 
     void Update()
     {
-        HuongDiChuyen.x = Input.GetAxis("Horizontal"); 
-        HuongDiChuyen.y = Input.GetAxis("Vertical");  
-        
+        HuongDiChuyen.x = Input.GetAxisRaw("Horizontal"); 
+        HuongDiChuyen.y = Input.GetAxisRaw("Vertical");  
+
+        if (HuongDiChuyen != Vector2.zero)
+        {
+            HuongDiChuyen = HuongDiChuyen.normalized;
+        }
 
         anim.SetFloat("isMove", HuongDiChuyen.sqrMagnitude);
 
@@ -60,7 +62,6 @@ public class DiChuyen : MonoBehaviour
             if (!canMove)
             {
                 canMove = TryMove(new Vector2(HuongDiChuyen.x, 0));
-
                 if (!canMove)
                 {
                     canMove = TryMove(new Vector2(0, HuongDiChuyen.y));
@@ -71,11 +72,11 @@ public class DiChuyen : MonoBehaviour
 
     void FlipSprite()
     {
-        if (Input.GetKeyDown(KeyCode.A))
+        if (HuongDiChuyen.x < 0)
         {
             spr.flipX = true;
         }
-        else if (Input.GetKeyDown(KeyCode.D))
+        else if (HuongDiChuyen.x > 0)
         {
             spr.flipX = false;
         }

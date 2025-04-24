@@ -2,15 +2,26 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Board : MonoBehaviour
+public partial class Board : MonoBehaviour
 {
     public int width;
     public int height;
     public GameObject[] dots;
     public GameObject[,] allDots;
-    private bool isRefilling;
+    public bool isRefilling;
     private int maxRefillIterations = 10;
+    private float spacing = 60f;
+    private int movingDotsCount = 0;
 
+    public bool IsRefilling => isRefilling;
+    public bool IsMovingDots => movingDotsCount > 0;
+
+    private Vector2 GetLocalPosition(int col, int row)
+    {
+        float offsetX = width / 2f - 0.5f;
+        float offsetY = height / 2f - 0.5f;
+        return new Vector2((col - offsetX) * spacing, (row - offsetY) * spacing);
+    }
 
     void Start()
     {
@@ -24,11 +35,20 @@ public class Board : MonoBehaviour
         {
             for (int j = 0; j < height; j++)
             {
-                Vector2 tempPosition = new Vector2(i, j);
+                Vector2 localPos = GetLocalPosition(i, j);
                 GameObject dot = CreateNewDot(i, j);
                 dot.transform.parent = this.transform;
+                dot.transform.localPosition = localPos;
                 dot.name = $"({i}, {j})";
                 allDots[i, j] = dot;
+
+                // Đảm bảo col và row được gán đúng
+                Dot dotComponent = dot.GetComponent<Dot>();
+                if (dotComponent != null)
+                {
+                    dotComponent.col = i;
+                    dotComponent.row = j;
+                }
             }
         }
     }
@@ -49,7 +69,13 @@ public class Board : MonoBehaviour
             ? availableDots[Random.Range(0, availableDots.Count)]
             : Random.Range(0, dots.Length);
 
-        GameObject dot = Instantiate(dots[dotToUse], new Vector2(x, y), Quaternion.identity);
+        GameObject dot = Instantiate(dots[dotToUse], Vector3.zero, Quaternion.identity);
+        Dot dotComponent = dot.GetComponent<Dot>();
+        if (dotComponent != null)
+        {
+            dotComponent.col = x;
+            dotComponent.row = y;
+        }
         return dot;
     }
 
@@ -206,7 +232,7 @@ public class Board : MonoBehaviour
                         }
 
                         inactivePiece.SetActive(true);
-                        inactivePiece.transform.position = new Vector2(i, height);
+                        inactivePiece.transform.localPosition = GetLocalPosition(i, height);
                         allDots[i, j] = inactivePiece;
 
                         Vector2 tempPosition = new Vector2(i, j);
@@ -214,10 +240,10 @@ public class Board : MonoBehaviour
                     }
                     else
                     {
-                        Vector2 spawnPosition = new Vector2(i, height);
+                        Vector2 spawnLocalPosition = GetLocalPosition(i, height);
                         GameObject newDot = CreateNonMatchingDot(i, j);
-                        newDot.transform.position = spawnPosition;
                         newDot.transform.parent = this.transform;
+                        newDot.transform.localPosition = spawnLocalPosition;
                         newDot.name = $"({i}, {j})";
                         allDots[i, j] = newDot;
 
@@ -265,7 +291,7 @@ public class Board : MonoBehaviour
             ? availableDots[Random.Range(0, availableDots.Count)]
             : Random.Range(0, dots.Length);
 
-        GameObject dot = Instantiate(dots[dotToUse], new Vector2(col, row), Quaternion.identity);
+        GameObject dot = Instantiate(dots[dotToUse], Vector3.zero, Quaternion.identity);
         Dot dotComponent = dot.GetComponent<Dot>();
         if (dotComponent != null)
         {
@@ -317,21 +343,28 @@ public class Board : MonoBehaviour
         return null;
     }
 
-    private IEnumerator MovePiece(GameObject piece, Vector2 endPosition)
+    public IEnumerator MovePiece(GameObject piece, Vector2 endPosition)
     {
+        movingDotsCount++;
+
+        int targetCol = (int)endPosition.x;
+        int targetRow = (int)endPosition.y;
+        Vector2 adjustedEndLocalPosition = GetLocalPosition(targetCol, targetRow);
+
         float elapsedTime = 0f;
         float moveTime = 0.2f;
-        Vector2 startPosition = piece.transform.position;
+        Vector2 startLocalPosition = piece.transform.localPosition;
 
         while (elapsedTime < moveTime)
         {
             elapsedTime += Time.deltaTime;
             float t = elapsedTime / moveTime;
-            piece.transform.position = Vector2.Lerp(startPosition, endPosition, t);
+            piece.transform.localPosition = Vector2.Lerp(startLocalPosition, adjustedEndLocalPosition, t);
             yield return null;
         }
 
-        piece.transform.position = endPosition;
+        piece.transform.localPosition = adjustedEndLocalPosition;
+        movingDotsCount--;
     }
 
     private IEnumerator FillBoardCo()

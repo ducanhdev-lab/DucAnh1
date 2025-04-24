@@ -13,6 +13,7 @@ TagManager:
   - Symbol Mana
   - Symbol DEF
   - CombatCamera
+  - Item
   layers:
   - Default
   - TransparentFX
@@ -56,8 +57,14 @@ TagManager:
   - name: Ground
     uniqueID: 3947127083
     locked: 0
+  - name: Wall
+    uniqueID: 1264235765
+    locked: 0
   - name: GameObject
     uniqueID: 1660129431
+    locked: 0
+  - name: Items
+    uniqueID: 3314932487
     locked: 0
   - name: Symbol
     uniqueID: 1651682551
